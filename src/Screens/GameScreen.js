@@ -1,40 +1,58 @@
+// src/screens/GameScreen.js
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Grid from "../components/Grid";
-import Timer from "../components/Timer";
 import useGameLogic from "../hooks/UserGameLogic";
 import useLevelManager from "../hooks/UseLevelManager";
 
 export default function GameScreen() {
     const { currentLevel, levelData, nextLevel, totalLevels } = useLevelManager();
 
-    const { grid, handleSelect, resetGame, addRow, timeLeft } = useGameLogic(
-        levelData,
-        nextLevel
-    );
+    // pass a callback to be notified on level complete/fail
+    const onLevelComplete = ({ success, reason }) => {
+        if (success) {
+            Alert.alert("Level complete!", "Proceeding to next level.", [
+                { text: "OK", onPress: () => nextLevel() },
+            ]);
+        }
+    };
+
+    // destructure values returned from useGameLogic
+    const {
+        grid,
+        handleSelect,
+        resetGame,
+        addRow,
+        timeLeft,
+        filledRows,
+    } = useGameLogic(levelData, onLevelComplete);
+
+    const addRowDisabled = filledRows >= (levelData?.maxRows ?? 9);
+    const score = grid.filter((cell) => cell.matched).length;
 
     return (
         <LinearGradient colors={["#1e3c72", "#2a5298"]} style={styles.container}>
-            {/* 🔹 Top Bar */}
             <View style={styles.topBar}>
-                <Text style={styles.stage}>Level {currentLevel + 1}</Text>
-                <Text style={styles.score}>Score: {grid.filter((c) => c.faded).length}</Text>
-                <Text style={styles.trophy}>🏆 {totalLevels * 100}</Text>
+                <Text style={styles.stage}>
+                    Level {currentLevel + 1} 
+                </Text>
+                <Text style={styles.score}>
+                    Score: {grid.filter((c) => c.matched).length}
+                </Text>
+                <Text style={styles.trophy}>⏱ {timeLeft}s</Text>
             </View>
 
-            {/* 🔹 Timer */}
 
-            {/* 🔹 Grid */}
             <View style={styles.gridWrapper}>
                 <Grid grid={grid} onCellPress={handleSelect} />
             </View>
 
-            {/* 🔹 Bottom Buttons */}
             <View style={styles.bottomBar}>
                 <TouchableOpacity
-                    style={[styles.button, { backgroundColor: "#4ECDC4" }]}
+                    style={[styles.button, { backgroundColor: addRowDisabled ? "#9adbd5" : "#4ECDC4" }]}
                     onPress={addRow}
+                    disabled={addRowDisabled}
                 >
                     <Text style={styles.btnText}>＋</Text>
                 </TouchableOpacity>
@@ -56,16 +74,16 @@ export default function GameScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, },
+    container: { flex: 1 },
     topBar: {
         flexDirection: "row",
         justifyContent: "space-between",
         padding: 50,
         alignItems: "center",
     },
-    stage: { color: "#fff", fontSize: 18, opacity: 0.8 },
-    score: { color: "#FFD93D", fontSize: 22, fontWeight: "bold" },
-    trophy: { color: "#fff", fontSize: 16 },
+    stage: { color: "#fff", fontSize: 16, opacity: 0.9 },
+    score: { color: "#FFD93D", fontSize: 16, fontWeight: "600" },
+    trophy: { color: "#fff", fontSize: 14 },
     gridWrapper: {
         flex: 1,
         justifyContent: "center",

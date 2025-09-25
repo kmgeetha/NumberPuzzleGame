@@ -1,6 +1,9 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
 import Cell from "./Cell";
+
+const CELL_SIZE = 50;
+const GRID_SIZE = 9;
 
 export default function Grid({ grid, onCellPress }) {
     return (
@@ -24,6 +27,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "center",
-        width: "100%",
+        width: CELL_SIZE * GRID_SIZE + 9 * 10, // 🔹 fit exactly 9 cells + margins
+        alignSelf: "center",
     },
 });

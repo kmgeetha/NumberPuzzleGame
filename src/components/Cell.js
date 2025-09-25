@@ -10,7 +10,7 @@ export default function Cell({ value, faded, highlighted, shake, onPress }) {
     useEffect(() => {
         if (faded) {
             Animated.timing(fadeAnim, {
-                toValue: 0.3,
+                toValue: 0.7,
                 duration: 500,
                 useNativeDriver: true,
             }).start();
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     cell: {
         width: CELL_SIZE,
         height: CELL_SIZE,
-        margin: 5,
+        margin: 3,
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#eee",
