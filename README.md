@@ -95,3 +95,33 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+# React Native Puzzle Game
+
+A simple puzzle game built with React Native as part of the Fresher Assignment for the React Native Developer position at EzyGamers.
+
+---
+
+## 📱 Features Implemented
+- Interactive puzzle game with drag-and-drop functionality
+- Shuffle and reset functionality
+- Game completion detection with success message
+- Responsive design supporting multiple screen sizes
+- Smooth animations and user-friendly UI
+
+---
+
+## 🛠️ Tech Stack
+- **React Native**: 0.73.x (or your version)
+- **Node.js**: 18.x (or your version)
+- **Android Studio** for building APK
+
+---
+
+## 🚀 Setup & Run Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/puzzle-game.git
+   cd puzzle-game
+"# NumberPuzzleGame" 
