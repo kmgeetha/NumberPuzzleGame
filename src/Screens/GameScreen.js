@@ -1,111 +1,86 @@
-// src/screens/GameScreen.js
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
-import Grid from "../components/Grid";
-import useGameLogic from "../hooks/UserGameLogic";
-import useLevelManager from "../hooks/UseLevelManager";
+import React, { useRef, useState, useEffect } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import Grid from "../components/grid/Grid";
+import ScoreBox from "../components/ui/ScoreBox";
+import TimerBox from "../components/ui/TimerBox";
+import AppButton from "../components/ui/AppButton";
+import { LevelManager } from "../game-core/LevelManager";
+import { DifficultyStrategy } from "../game-core/DifficultyStrategy";
+import { NumberMatchRule } from "../game-core/NumberMatchRule";
 
-export default function GameScreen() {
-    const { currentLevel, levelData, nextLevel, totalLevels } = useLevelManager();
+export default function GameScreen({ route, navigation }) {
+  const startLevel = route?.params?.startLevel || 1;
+  const lmRef = useRef(new LevelManager(new DifficultyStrategy(), NumberMatchRule));
+  const lm = lmRef.current;
+  // Initialize level manager to requested start
+  useEffect(() => {
+    lm.reset();
+    while (lm.currentLevel < startLevel) lm.levelUp();
+  }, []);
 
-    // pass a callback to be notified on level complete/fail
-    const onLevelComplete = ({ success, reason }) => {
-        if (success) {
-            Alert.alert("Level complete!", "Proceeding to next level.", [
-                { text: "OK", onPress: () => nextLevel() },
-            ]);
-        }
-    };
+  const [levelConfig, setLevelConfig] = useState(lm.getLevelData());
+  const [score, setScore] = useState(0);
 
-    // destructure values returned from useGameLogic
-    const {
-        grid,
-        handleSelect,
-        resetGame,
-        addRow,
-        timeLeft,
-        filledRows,
-    } = useGameLogic(levelData, onLevelComplete);
+  // remountable GameArea: render key changes when level changes
+  const [key, setKey] = useState(0);
 
-    const addRowDisabled = filledRows >= (levelData?.maxRows ?? 9);
-    const score = grid.filter((cell) => cell.matched).length;
+  const onLevelComplete = ({ success, gameState }) => {
+    const result = lm.onGameProgress(gameState || {});
+    setScore(gameState?.score || score);
+    if (result.success) {
+      Alert.alert("Level Complete", `Proceeding to level ${lm.currentLevel}`);
+      setLevelConfig(lm.getLevelData());
+      setKey((k) => k + 1);
+    } else {
+      if (!success) Alert.alert("Level Failed", "Try again");
+    }
+  };
 
-    return (
-        <LinearGradient colors={["#1e3c72", "#2a5298"]} style={styles.container}>
-            <View style={styles.topBar}>
-                <Text style={styles.stage}>
-                    Level {currentLevel + 1} 
-                </Text>
-                <Text style={styles.score}>
-                    Score: {grid.filter((c) => c.matched).length}
-                </Text>
-                <Text style={styles.trophy}>⏱ {timeLeft}s</Text>
-            </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.top}>
+        <Text style={styles.title}>Level {lm.currentLevel}</Text>
+        <View style={styles.topRow}>
+          <ScoreBox score={score} />
+          <TimerBox timeLeft={levelConfig.time} />
+        </View>
+      </View>
 
+      <View style={styles.gridWrap}>
+        <GameArea key={key} levelConfig={levelConfig} onLevelComplete={onLevelComplete} />
+      </View>
 
-            <View style={styles.gridWrapper}>
-                <Grid grid={grid} onCellPress={handleSelect} />
-            </View>
+      <View style={styles.controls}>
+        <AppButton title="Restart Level" onPress={() => setKey((k) => k + 1)} />
+      </View>
+    </View>
+  );
+}
 
-            <View style={styles.bottomBar}>
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: addRowDisabled ? "#9adbd5" : "#4ECDC4" }]}
-                    onPress={addRow}
-                    disabled={addRowDisabled}
-                >
-                    <Text style={styles.btnText}>＋</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: "#FF6B6B" }]}
-                    onPress={resetGame}
-                >
-                    <Text style={styles.btnText}>⟲</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: "#FFD93D" }]}
-                    onPress={nextLevel}
-                >
-                    <Text style={styles.btnText}>⇨</Text>
-                </TouchableOpacity>
-            </View>
-        </LinearGradient>
-    );
+function GameArea({ levelConfig, onLevelComplete }) {
+  // useGameLogic handles grid, selection, matches and calls onLevelComplete when done
+  const { grid, handleSelect, resetGame, matchedPairs, timeLeft } = require("../hooks/useGameLogic").default(levelConfig, onLevelComplete);
+
+  useEffect(() => {
+    // when matchedPairs changes we could push progress to parent if needed
+  }, [matchedPairs]);
+
+  return (
+    <View style={{ alignItems: "center" }}>
+      <Grid grid={grid} onCellPress={handleSelect} />
+      <View style={{ marginTop: 10 }}>
+        <Text style={{ color: "#fff", textAlign: "center" }}>Matched: {matchedPairs}</Text>
+        <Text style={{ color: "#fff", textAlign: "center" }}>Time Left: {timeLeft}s</Text>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    topBar: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        padding: 50,
-        alignItems: "center",
-    },
-    stage: { color: "#fff", fontSize: 16, opacity: 0.9 },
-    score: { color: "#FFD93D", fontSize: 16, fontWeight: "600" },
-    trophy: { color: "#fff", fontSize: 14 },
-    gridWrapper: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 10,
-    },
-    bottomBar: {
-        flexDirection: "row",
-        justifyContent: "space-evenly",
-        padding: 20,
-    },
-    button: {
-        width: 65,
-        height: 65,
-        borderRadius: 32,
-        justifyContent: "center",
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 6,
-        elevation: 5,
-    },
-    btnText: { fontSize: 28, color: "#fff", fontWeight: "bold" },
+  container: { flex: 1, backgroundColor: "#071228" },
+  top: { padding: 14 },
+  title: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  gridWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
+  controls: { padding: 14, alignItems: "center" },
 });
